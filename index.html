@@ -3,43 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Školní Nástěnka</title>
+    <title>Školní Systém - Známky</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #e5ddd5; margin: 0; display: flex; justify-content: center; height: 100vh; }
-        .chat-container { width: 100%; max-width: 500px; background: #fff; display: flex; flex-direction: column; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .header { background: #075e54; color: white; padding: 15px; text-align: center; font-size: 20px; font-weight: bold; }
-        #login-section { padding: 50px 20px; text-align: center; background: #f0f2f5; height: 100%; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; display: flex; justify-content: center; height: 100vh; }
+        .app-container { width: 100%; max-width: 500px; background: #fff; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .header { background: #1a73e8; color: white; padding: 20px; text-align: center; font-size: 22px; font-weight: bold; }
+        
+        #login-section { padding: 50px 20px; text-align: center; }
         .hidden { display: none !important; }
-        #messages-container { flex: 1; overflow-y: auto; padding: 20px; background-color: #e5ddd5; display: flex; flex-direction: column; gap: 10px; }
-        .message-item { max-width: 85%; padding: 10px; border-radius: 10px; font-size: 16px; display: flex; justify-content: space-between; align-items: flex-start; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
-        .msg-admin { align-self: flex-end; background: #dcf8c6; }
-        .msg-user { align-self: flex-start; background: #ffffff; }
-        .delete-btn { background: none; border: none; color: red; cursor: pointer; font-size: 18px; margin-left: 10px; }
-        .admin-input-bar { border-top: 1px solid #ddd; padding: 10px; background: #f0f0f0; display: flex; gap: 10px; }
-        input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; }
-        .send-btn { background: #075e54; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; }
-        .plus-btn { background: #25d366; color: white; border: none; width: 50px; height: 50px; border-radius: 50%; font-size: 30px; cursor: pointer; margin: 10px auto; display: block; }
+
+        /* Styl výpisu známek */
+        #messages-container { flex: 1; overflow-y: auto; padding: 15px; background: #f8f9fa; display: flex; flex-direction: column; gap: 12px; }
+        .grade-card { background: white; padding: 15px; border-radius: 10px; border-left: 6px solid #1a73e8; box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: relative; }
+        .grade-number { font-size: 20px; font-weight: bold; color: #d93025; }
+        .info-text { display: block; margin-top: 5px; color: #5f6368; font-style: italic; }
+        
+        .delete-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; color: #999; cursor: pointer; font-size: 18px; }
+        .delete-btn:hover { color: #d93025; }
+
+        /* Admin formulář (Tabulka v appce) */
+        .admin-form { padding: 20px; border-top: 1px solid #ddd; background: #fff; border-bottom: 2px solid #1a73e8; }
+        .admin-form label { display: block; font-size: 12px; color: #1a73e8; font-weight: bold; margin-bottom: 4px; }
+        .admin-form input { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        
+        .btn-group { display: flex; gap: 10px; }
+        .btn { flex: 1; padding: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-send { background: #1a73e8; color: white; }
+        .btn-cancel { background: #dadce0; color: #3c4043; }
+        
+        .plus-btn { background: #1a73e8; color: white; border: none; width: 60px; height: 60px; border-radius: 50%; font-size: 35px; cursor: pointer; margin: 15px auto; display: block; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
-    <div class="chat-container">
-        <div class="header" id="header-title">Zabezpečený Vstup</div>
+    <div class="app-container">
+        <div class="header" id="header-title">Školní Portál</div>
 
         <div id="login-section">
-            <input type="password" id="password-input" placeholder="Zadejte heslo..." style="width: 80%; margin-bottom: 20px;">
-            <button class="send-btn" onclick="checkPassword()" style="width: 80%;">Vstoupit</button>
+            <input type="password" id="password-input" placeholder="Zadejte heslo..." style="width: 80%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #ccc;">
+            <button class="btn btn-send" onclick="checkPassword()" style="width: 80%;">Vstoupit</button>
         </div>
 
         <div id="main-section" class="hidden" style="display: flex; flex-direction: column; height: 100%; overflow: hidden;">
-            <div id="messages-container"></div>
+            
             <div id="admin-controls" class="hidden">
-                <button id="toggle-btn" class="plus-btn" onclick="toggleInput()">+</button>
-                <div id="input-area" class="admin-input-bar hidden">
-                    <input type="text" id="new-msg" placeholder="Napsat zprávu...">
-                    <button class="send-btn" onclick="sendMessage()">Poslat</button>
+                <button id="add-btn" class="plus-btn" onclick="toggleForm()">+</button>
+                
+                <div id="grade-form" class="admin-form hidden">
+                    <label>ZNÁMKA:</label>
+                    <input type="text" id="grade-val" placeholder="Např. 1, 2+, Malá 3...">
+                    
+                    <label>INFORMACE / PŘEDMĚT:</label>
+                    <input type="text" id="info-val" placeholder="Např. Matematika - test">
+                    
+                    <div class="btn-group">
+                        <button class="btn btn-cancel" onclick="toggleForm()">Zrušit</button>
+                        <button class="btn btn-send" onclick="sendGrade()">Potvrdit známku</button>
+                    </div>
                 </div>
             </div>
+
+            <div id="messages-container"></div>
         </div>
     </div>
 
@@ -60,64 +84,77 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        let currentRole = "";
+        let role = "";
 
         window.checkPassword = function() {
             const pass = document.getElementById('password-input').value;
             if (pass === "6852") {
-                currentRole = "admin";
-                setupUI("Admin Panel");
+                role = "admin";
+                start("Administrace");
             } else if (pass === "123") {
-                currentRole = "user";
-                setupUI("Nástěnka");
+                role = "student";
+                start("Moje Známky");
             } else {
-                alert("Špatné heslo!");
+                alert("Neplatné heslo!");
             }
         };
 
-        function setupUI(title) {
+        function start(title) {
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('main-section').classList.remove('hidden');
             document.getElementById('header-title').innerText = title;
-            if (currentRole === "admin") document.getElementById('admin-controls').classList.remove('hidden');
-            loadMessages();
+            if (role === "admin") document.getElementById('admin-controls').classList.remove('hidden');
+            loadGrades();
         }
 
-        window.toggleInput = function() {
-            document.getElementById('input-area').classList.toggle('hidden');
-            document.getElementById('toggle-btn').classList.toggle('hidden');
+        window.toggleForm = function() {
+            document.getElementById('grade-form').classList.toggle('hidden');
+            document.getElementById('add-btn').classList.toggle('hidden');
         };
 
-        window.sendMessage = function() {
-            const text = document.getElementById('new-msg').value;
-            if (!text.trim()) return;
-            push(ref(db, 'messages/'), { text: text, sender: 'admin' });
-            document.getElementById('new-msg').value = "";
-            toggleInput();
+        window.sendGrade = function() {
+            const grade = document.getElementById('grade-val').value;
+            const info = document.getElementById('info-val').value;
+
+            if (!grade || !info) return alert("Vyplňte známku i informaci!");
+
+            push(ref(db, 'grades/'), {
+                grade: grade,
+                info: info,
+                date: new Date().toLocaleDateString()
+            });
+
+            document.getElementById('grade-val').value = "";
+            document.getElementById('info-val').value = "";
+            toggleForm();
         };
 
-        window.deleteMessage = function(id) {
-            if(confirm("Smazat?")) remove(ref(db, 'messages/' + id));
+        window.deleteGrade = function(id) {
+            if(confirm("Smazat tuto známku ze systému?")) remove(ref(db, 'grades/' + id));
         };
 
-        function loadMessages() {
-            onValue(ref(db, 'messages/'), (snapshot) => {
+        function loadGrades() {
+            onValue(ref(db, 'grades/'), (snapshot) => {
                 const container = document.getElementById('messages-container');
                 container.innerHTML = "";
                 const data = snapshot.val();
                 if (data) {
-                    Object.keys(data).forEach(id => {
-                        const msg = data[id];
-                        const div = document.createElement('div');
-                        // Všechny zprávy jsou od admina, tak je dáme do bublin
-                        div.className = `message-item ${currentRole === 'admin' ? 'msg-admin' : 'msg-user'}`;
-                        div.innerHTML = `<span>${msg.text}</span>` + 
-                                       (currentRole === 'admin' ? `<button class="delete-btn" onclick="deleteMessage('${id}')">🗑️</button>` : "");
-                        container.appendChild(div);
+                    Object.keys(data).reverse().forEach(id => {
+                        const item = data[id];
+                        const card = document.createElement('div');
+                        card.className = 'grade-card';
+                        card.innerHTML = `
+                            <div>
+                                <strong>Známka:</strong> <span class="grade-number">${item.grade}</span><br>
+                                <strong>Informace:</strong> <span class="info-text">${item.info}</span>
+                                <small style="color:#aaa; font-size:10px;">${item.date || ''}</small>
+                            </div>
+                            ${role === 'admin' ? `<button class="delete-btn" onclick="deleteGrade('${id}')">🗑️</button>` : ""}
+                        `;
+                        container.appendChild(card);
                     });
-                    container.scrollTop = container.scrollHeight;
                 } else {
-                    container.innerHTML = "<p style='text-align:center;color:gray'>Žádné zprávy.</p>";
+                    container.innerHTML = "<p style='text-align:center; color:gray;'>Zatím nebyly uděleny žádné známky.</p>";
                 }
             });
         }
