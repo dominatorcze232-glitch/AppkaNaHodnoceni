@@ -2,187 +2,236 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Školní Systém v2</title>
+    <title>ČLVA - Admin & Space System</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; display: flex; justify-content: center; min-height: 100vh; }
-        .app-container { width: 100%; max-width: 500px; background: #fff; display: flex; flex-direction: column; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-        .header { background: #1a73e8; color: white; padding: 20px; text-align: center; font-size: 22px; font-weight: bold; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; }
         
-        #login-section { padding: 40px 20px; text-align: center; }
-        .hidden { display: none !important; }
-        input { width: 90%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; }
+        /* UI a Menu */
+        #ui-layer { position: absolute; top: 10px; left: 10px; color: white; pointer-events: none; }
+        .window { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(20, 20, 25, 0.95); border: 2px solid #00d4ff; padding: 20px;
+            color: white; display: none; min-width: 300px; z-index: 100; border-radius: 8px;
+        }
+
+        /* Admin Ikona */
+        #admin-icon {
+            position: absolute; top: 10px; right: 10px; font-size: 30px;
+            cursor: pointer; background: #333; padding: 5px 12px; border-radius: 50%;
+        }
+
+        button { background: #00d4ff; border: none; padding: 8px 15px; cursor: pointer; font-weight: bold; margin: 5px; border-radius: 4px; }
+        button.danger { background: #ff4444; }
+        input { padding: 8px; margin: 5px; width: 80%; }
         
-        .btn { width: 90%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; }
-        .btn-blue { background: #1a73e8; color: white; }
-        .btn-green { background: #34a853; color: white; margin-top: 10px; }
-        
-        /* Karty se známkami a uživateli */
-        #content-container { flex: 1; overflow-y: auto; padding: 15px; background: #f8f9fa; }
-        .card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid #1a73e8; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: relative; }
-        .delete-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; color: #ff4444; cursor: pointer; font-size: 18px; }
-        
-        .admin-box { background: #e8f0fe; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #1a73e8; }
-        h3 { margin-top: 0; color: #1a73e8; }
+        .user-row { border-bottom: 1px solid #444; padding: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .grade-item { background: #222; margin: 5px 0; padding: 5px; border-radius: 4px; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
 
-    <div class="app-container">
-        <div class="header" id="header-title">Školní Portál</div>
+<div id="ui-layer">
+    <h1>Mince: <span id="coin-count">0</span></h1>
+</div>
 
-        <div id="login-section">
-            <input type="text" id="login-name" placeholder="Jméno a příjmení">
-            <input type="password" id="login-pass" placeholder="Heslo">
-            <button class="btn btn-blue" onclick="handleLogin()">Přihlásit se</button>
-        </div>
+<div id="admin-icon" onclick="toggleWindow('admin-panel')">✏️</div>
 
-        <div id="main-section" class="hidden">
-            <div id="content-container">
-                
-                <div id="admin-panel" class="hidden">
-                    <div class="admin-box">
-                        <h3>Vytvořit studenta</h3>
-                        <input type="text" id="new-student-name" placeholder="Celé jméno studenta">
-                        <input type="text" id="new-student-pass" placeholder="Jeho nové heslo">
-                        <button class="btn btn-green" onclick="createStudent()">Uložit studenta</button>
-                    </div>
+<div id="admin-panel" class="window">
+    <h2>Správa uživatelů</h2>
+    <div id="user-list"></div>
+    <hr>
+    <h3>Udělit známku</h3>
+    <input type="text" id="grade-target" placeholder="ID uživatele">
+    <input type="number" id="grade-value" placeholder="Známka (1-5)" min="1" max="5">
+    <input type="text" id="grade-info" placeholder="Informace (předmět...)">
+    <button onclick="sendGrade()">Odeslat známku</button>
+    <br>
+    <button onclick="toggleWindow('admin-panel')">Zavřít</button>
+</div>
 
-                    <div class="admin-box">
-                        <h3>Zapsat známku</h3>
-                        <input type="text" id="grade-val" placeholder="Známka (např. 1)">
-                        <input type="text" id="info-val" placeholder="Informace (např. Matematika)">
-                        <button class="btn btn-blue" onclick="sendGrade()">Odeslat známku všem</button>
-                    </div>
-                    <hr>
-                    <h4>Existující studenti:</h4>
-                    <div id="student-list"></div>
-                </div>
+<div id="grades-view" class="window">
+    <h2>Známky uživatele: <span id="view-user-name"></span></h2>
+    <div id="grades-list"></div>
+    <button onclick="toggleWindow('grades-view')">Zavřít</button>
+</div>
 
-                <div id="student-panel" class="hidden">
-                    <h4>Moje známky a informace:</h4>
-                    <div id="grade-list"></div>
-                </div>
+<div id="shop-menu" class="window">
+    <h2>Nabídka ČLVA</h2>
+    <p>Satelit: <span id="price-tag">Zdarma</span></p>
+    <button id="buy-btn">Koupit a vypustit</button>
+    <button onclick="toggleWindow('shop-menu')">Zavřít</button>
+</div>
 
-            </div>
-        </div>
-    </div>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, onDisconnect, update, remove, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, remove, get, child } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+    const firebaseConfig = {
+        apiKey: "AIzaSyAYA_Y3SpzdwQNklKFoa3HZiJPT8kxqjO8",
+        authDomain: "multiplayer-cf14f.firebaseapp.com",
+        projectId: "multiplayer-cf14f",
+        storageBucket: "multiplayer-cf14f.firebasestorage.app",
+        messagingSenderId: "1042297372152",
+        appId: "1:1042297372152:web:16b94ab1e9277337d52a0d",
+        measurementId: "G-7V3WJ6MS7S"
+    };
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDYub0TMKRTTzo4JZgPngG4aHLEkEBvwfs",
-            authDomain: "skola-4d7ac.firebaseapp.com",
-            databaseURL: "https://skola-4d7ac-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "skola-4d7ac",
-            storageBucket: "skola-4d7ac.firebasestorage.app",
-            messagingSenderId: "107281183940",
-            appId: "1:107281183940:web:91cee1374e1bece4150591",
-            measurementId: "G-ZC8W1V9XKM"
-        };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    document.body.appendChild(canvas);
 
-        window.handleLogin = async function() {
-            const name = document.getElementById('login-name').value.trim();
-            const pass = document.getElementById('login-pass').value.trim();
+    let w, h;
+    function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+    window.onresize = resize;
+    resize();
 
-            // 1. Kontrola Admina
-            if (name === "" && pass === "6852") {
-                showView("admin", "Administrátor");
-                return;
+    const myId = "Player_" + Math.random().toString(36).substring(7);
+    let myPos = { x: 100, y: h - 70, id: myId };
+    let coins = 0;
+    let satellitesOwned = 0;
+    let otherPlayers = {};
+    let activeSatellites = [];
+
+    const playerRef = ref(db, 'players/' + myId);
+    set(playerRef, myPos);
+    onDisconnect(playerRef).remove();
+
+    // Funkce pro okna
+    window.toggleWindow = (id) => {
+        const el = document.getElementById(id);
+        el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    };
+
+    // Smazání účtu (hráče)
+    window.deleteUser = (id) => {
+        remove(ref(db, 'players/' + id));
+        remove(ref(db, 'grades/' + id));
+    };
+
+    // Zobrazení známek
+    window.viewGrades = (id) => {
+        document.getElementById('view-user-name').innerText = id;
+        onValue(ref(db, 'grades/' + id), (snapshot) => {
+            const list = document.getElementById('grades-list');
+            list.innerHTML = "";
+            const data = snapshot.val();
+            for (let key in data) {
+                const g = data[key];
+                list.innerHTML += `<div class="grade-item">
+                    <span><b>${g.value}</b> - ${g.info}</span>
+                    <button class="danger" onclick="deleteGrade('${id}', '${key}')">X</button>
+                </div>`;
             }
+        });
+        toggleWindow('grades-view');
+    };
 
-            // 2. Kontrola Studenta v databázi
-            const dbRef = ref(db);
-            get(child(dbRef, 'users')).then((snapshot) => {
-                if (snapshot.exists()) {
-                    let found = false;
-                    snapshot.forEach((childSnapshot) => {
-                        const user = childSnapshot.val();
-                        if (user.name === name && user.pass === pass) {
-                            found = true;
-                            showView("student", name);
-                        }
-                    });
-                    if (!found) alert("Jméno nebo heslo je špatně!");
-                } else {
-                    alert("Žádní uživatelé v systému nejsou.");
-                }
-            });
-        };
+    window.deleteGrade = (userId, gradeId) => {
+        remove(ref(db, `grades/${userId}/${gradeId}`));
+    };
 
-        function showView(role, displayName) {
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('main-section').classList.remove('hidden');
-            document.getElementById('header-title').innerText = displayName;
+    window.sendGrade = () => {
+        const target = document.getElementById('grade-target').value;
+        const val = document.getElementById('grade-value').value;
+        const info = document.getElementById('grade-info').value;
+        if (!target || !val) return alert("Vyplň ID a známku!");
 
-            if (role === "admin") {
-                document.getElementById('admin-panel').classList.remove('hidden');
-                loadStudents();
-            } else {
-                document.getElementById('student-panel').classList.remove('hidden');
-                loadGrades();
+        push(ref(db, 'grades/' + target), { value: val, info: info });
+        alert("Známka odeslána!");
+    };
+
+    // Sledování hráčů pro admin seznam
+    onValue(ref(db, 'players'), (snapshot) => {
+        otherPlayers = snapshot.val() || {};
+        const list = document.getElementById('user-list');
+        list.innerHTML = "";
+        for (let id in otherPlayers) {
+            list.innerHTML += `
+                <div class="user-row">
+                    <span>${id}</span>
+                    <div>
+                        <button onclick="viewGrades('${id}')">Známky</button>
+                        <button class="danger" onclick="deleteUser('${id}')">Smazat</button>
+                    </div>
+                </div>`;
+        }
+        // Pokud admin smaže MĚ, refreshnu stránku (simulace smazání účtu)
+        if (!otherPlayers[myId]) location.reload();
+    });
+
+    // --- Zbytek herní logiky ---
+    const keys = {};
+    window.onkeydown = e => {
+        keys[e.key] = true;
+        if(e.key === 'e' || e.key === 'E') {
+             if (myPos.x > w - 300) toggleWindow('shop-menu');
+        }
+    };
+    window.onkeyup = e => keys[e.key] = false;
+
+    document.getElementById('buy-btn').onclick = () => {
+        const price = satellitesOwned === 0 ? 0 : 200;
+        if (coins >= price) {
+            coins -= price;
+            satellitesOwned++;
+            activeSatellites.push({ x: w - 150, y: h - 150, stage: 'launch' });
+            if(satellitesOwned === 1) setInterval(() => { coins += 5; }, 1000);
+            toggleWindow('shop-menu');
+        }
+    };
+
+    function draw() {
+        ctx.clearRect(0, 0, w, h);
+        
+        // Obloha a Vesmír
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, '#000'); grad.addColorStop(0.4, '#000033'); grad.addColorStop(0.8, '#87CEEB');
+        ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+
+        // Měsíc
+        ctx.fillStyle = "#EEE"; ctx.beginPath(); ctx.arc(w * 0.2, 100, 30, 0, 7); ctx.fill();
+
+        // Tráva
+        ctx.fillStyle = "#2d5a27"; ctx.fillRect(0, h - 50, w, 50);
+
+        // Budova
+        ctx.fillStyle = "#444"; ctx.fillRect(w - 250, h - 200, 200, 150);
+        ctx.fillStyle = "white"; ctx.font = "bold 16px Arial";
+        ctx.fillText("ČLVA", w - 170, h - 140);
+        ctx.font = "10px Arial"; ctx.fillText("Česká letecká vesmírná agentura", w - 240, h - 120);
+
+        // Pohyb a vykreslení hráčů
+        if (keys['ArrowLeft'] || keys['a']) myPos.x -= 5;
+        if (keys['ArrowRight'] || keys['d']) myPos.x += 5;
+        update(playerRef, { x: myPos.x });
+
+        ctx.fillStyle = "red"; ctx.fillRect(myPos.x, myPos.y, 30, 30);
+        ctx.fillStyle = "white"; ctx.font = "10px Arial"; ctx.fillText("JÁ", myPos.x, myPos.y - 5);
+
+        for (let id in otherPlayers) {
+            if (id !== myId) {
+                ctx.fillStyle = "blue";
+                ctx.fillRect(otherPlayers[id].x, otherPlayers[id].y, 30, 30);
+                ctx.fillStyle = "white";
+                ctx.fillText(id, otherPlayers[id].x, otherPlayers[id].y - 5);
             }
         }
 
-        // --- FUNKCE PRO ADMINA ---
-        window.createStudent = function() {
-            const name = document.getElementById('new-student-name').value;
-            const pass = document.getElementById('new-student-pass').value;
-            if (!name || !pass) return alert("Vyplňte jméno i heslo!");
-            
-            push(ref(db, 'users/'), { name: name, pass: pass });
-            alert("Student vytvořen!");
-            document.getElementById('new-student-name').value = "";
-            document.getElementById('new-student-pass').value = "";
-        };
+        // Satelity
+        activeSatellites.forEach(s => {
+            if (s.stage === 'launch') { s.y -= 3; if (s.y < 150) s.stage = 'orbit'; }
+            else { s.x += Math.sin(Date.now()/1000); }
+            ctx.fillStyle = "silver"; ctx.fillRect(s.x, s.y, 15, 10);
+        });
 
-        function loadStudents() {
-            onValue(ref(db, 'users/'), (snapshot) => {
-                const list = document.getElementById('student-list');
-                list.innerHTML = "";
-                snapshot.forEach((child) => {
-                    const u = child.val();
-                    const d = document.createElement('div');
-                    d.className = 'card';
-                    d.style.borderLeftColor = '#34a853';
-                    d.innerHTML = `<strong>${u.name}</strong> (Heslo: ${u.pass})
-                                   <button class="delete-btn" onclick="deleteItem('users/${child.key}')">🗑️</button>`;
-                    list.appendChild(d);
-                });
-            });
-        }
-
-        window.sendGrade = function() {
-            const g = document.getElementById('grade-val').value;
-            const i = document.getElementById('info-val').value;
-            if (!g || !i) return alert("Vyplňte známku i info!");
-            push(ref(db, 'grades/'), { grade: g, info: i });
-            alert("Známka odeslána všem studentům!");
-        };
-
-        // --- FUNKCE PRO VŠECHNY ---
-        function loadGrades() {
-            onValue(ref(db, 'grades/'), (snapshot) => {
-                const list = document.getElementById('grade-list');
-                list.innerHTML = "";
-                snapshot.forEach((child) => {
-                    const g = child.val();
-                    const d = document.createElement('div');
-                    d.className = 'card';
-                    d.innerHTML = `<strong>Známka: ${g.grade}</strong><br><small>${g.info}</small>`;
-                    list.appendChild(d);
-                });
-            });
-        }
-
-        window.deleteItem = function(path) {
-            if(confirm("Opravdu smazat?")) remove(ref(db, path));
-        };
-    </script>
+        document.getElementById('coin-count').innerText = coins;
+        requestAnimationFrame(draw);
+    }
+    draw();
+</script>
 </body>
 </html>
